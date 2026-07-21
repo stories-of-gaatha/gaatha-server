@@ -4,10 +4,9 @@ description: "Helm Chart to deploy the Gaatha Backend"
 type: application
 version: 0.0.1-SET-BY-CICD
 sources:
-  - https://github.com/stories-of-gaatha/gaatha-server/
-
+  - https://github.com/storiesofgaatha/gaatha-server
 dependencies:
-  - name: toggle-django-helm
+  - name: banjo-helm
     alias: app
-    version: 0.2.0
+    version: 0.4.1
     repository: oci://ghcr.io/toggle-corp

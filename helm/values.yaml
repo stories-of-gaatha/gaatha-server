@@ -1,128 +1,58 @@
 app:
+  # Short project name so generated resource names stay within k8s limits.
+  fullnameOverride: "gaatha"
+  environment: PROD
+  # Global image
   image:
     name: SET-BY-CICD-IMAGE
     tag: SET-BY-CICD-TAG
-
-  ingress:
-    enabled: true
-    className: nginx
-    annotations:
-      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-
-  redis:
-    enabled: false
-
-  postgresql:
-    enabled: true
-    fullnameOverride: "gaatha-postgresql"
-    architecture: standalone
-    auth:
-      postgresPassword: ""
-      username: ""
-      password: ""
-      database: ""
-    primary:
-      persistence:
-        enabled: "true"
-        storageClass: ""
-        size: 2Gi
+    imagePullPolicy: IfNotPresent
 
   api:
     enabled: true
-    replicaCount: 1
     containerPort: 80
-    command: ["gunicorn", "gaatha.wsgi:application", "--timeout=40", "--bind", "0.0.0.0:80"]
+    command: ["/code/scripts/run_prod.sh"]
+    probes:
+      enabled: true    # chart defaults: liveness /healthz/live/, readiness+startup /healthz/ready/
+    ingress:
+      enabled: true
+      # NOTE: className left blank on purpose; body-size + ingress class are set in
+      # values/traefik.yaml. Set `host` per environment in the env overlay.
+      className:
+      host:
     resources:
       requests:
-        cpu: "2"
+        cpu: "0.1"
         memory: 0.5Gi
       limits:
         cpu: "1"
         memory: 1Gi
 
+  # This project has no Celery workers.
   worker:
     enabled: false
 
-  minio:
-    enabled: false
-    disableWebUI: true
-    mode: standalone
-    fullnameOverride: gaatha-minio
-    global:
-      defaultStorageClass:
-    apiIngress:
-      enabled: true
-      ingressClassName:
-      hostname:
-      annotations:
-        nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    auth:
-      forceNewKeys: true
-      rootUser: gaatha
-      rootPassword: ""
-    persistence:
-      enabled: true
-      size: 1Gi
-    defaultBuckets: gaatha-static,gaatha-media
-    provisioning:
-      enabled: true
-      resourcesPreset: "nano"
-      cleanupAfterFinished:
-        enabled: true
-      extraCommands:
-        - "mc anonymous set download provisioning/gaatha-static"
-        - "mc anonymous set download provisioning/gaatha-media"
-
-  argoHook:
+  hooks:
     enabled: true
-    resources:
-      requests:
-        cpu: "0.1"
-        memory: 1Gi
-      limits:
-        cpu: "1"
-        memory: 2Gi
-    hooks:
-      # NOTE: Make sure keys are lowercase
-      db-migrate:
-        enabled: true
-        hook: PostSync
-        preserveHistory: true
-        command: ["/bin/bash", "-c", "./manage.py wait_for_resources --db && ./manage.py migrate"]
-      collect-static:
-        enabled: true
-        hook: PostSync
-        command: ["/bin/bash", "-c"]
-        args:
-          - "./manage.py wait_for_resources --minio && ./manage.py collectstatic --noinput"
+    jobs:
+      # NOTE: Make sure keys are lowercase.
+      # db-migrate and collect-static inherit the chart defaults (manage.py migrate /
+      # collectstatic --noinput). wait-for-resources gates the app on DB + object
+      # storage connectivity.
+      wait-for-resources:
+        command: ["./manage.py", "wait_for_resources", "--db", "--minio"]
 
+  # NOTE: Check gaatha/settings.py for all available options. Per-environment values
+  # (domains, cookie domains, S3 endpoint/buckets) and all secrets are supplied by the
+  # env overlays + CICD at deploy time.
   env:
     APP_ENVIRONMENT: "{{ $.Values.environment }}"
-    TIME_ZONE: "Asia/Kathmandu"
     DEBUG: "false"
-    LANGUAGE_CODE: "en"
-    # App Domain
-    APP_TYPE: "WEB"
-    APP_DOMAIN: "{{ required \".app.env.APP_DOMAIN\" nil }}"
-    FRONTEND_DOMAIN: "{{ required \".app.env.FRONTEND_DOMAIN\" nil }}"
-    SESSION_COOKIE_DOMAIN: "{{ required \".app.env.SESSION_COOKIE_DOMAIN\" nil }}"
-    CSRF_COOKIE_DOMAIN: "{{ required \".app.env.CSRF_COOKIE_DOMAIN\" nil }}"
-    # Aws-minio-s3
-    AWS_S3_ENABLED: "false"
-    AWS_S3_ENDPOINT_URL: "https://{{ $.Values.minio.apiIngress.hostname }}/"
-    AWS_S3_MEDIA_BUCKET_NAME: "gaatha-media"
-    AWS_S3_STATIC_BUCKET_NAME: "gaatha-static"
-
-  secrets:
-    DJANGO_SECRET_KEY: "thoh-2i##o2j^6--_sg-oq!j9ohqipx3_a-c2+"
-    # Postgres
-    DB_NAME: "{{ $.Values.postgresql.auth.database }}"
-    DB_USER: "postgres"
-    DB_PWD: "{{ $.Values.postgresql.auth.postgresPassword }}"
-    DB_HOST: "{{ include \"postgresql.v1.primary.fullname\" $.Subcharts.postgresql }}"
-    DB_PORT: "{{ include \"postgresql.v1.service.port\" $.Subcharts.postgresql }}"
-    # minio-s3
-    AWS_S3_ACCESS_KEY_ID: "{{ required \".app.minio.auth.rootUser\" $.Values.minio.auth.rootUser }}"
-    AWS_S3_SECRET_ACCESS_KEY: "{{ required \".app.minio.auth.rootPassword\" $.Values.minio.auth.rootPassword }}"
-    AWS_S3_REGION_NAME: "us-east-1"
-
+    LANGUAGE_CODE: "en-us"
+    TIME_ZONE: "Asia/Kathmandu"
+    # Object storage on by default; endpoint, bucket names and credentials are
+    # supplied per-environment (deployer's choice) — see gaatha/settings.py.
+    AWS_S3_ENABLED: "true"
+    # AWS_S3_ENDPOINT_URL: ""        # per-environment (deploy time)
+    # AWS_S3_MEDIA_BUCKET_NAME: ""   # per-environment (deploy time)
+    # AWS_S3_STATIC_BUCKET_NAME: ""  # per-environment (deploy time)

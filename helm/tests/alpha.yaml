@@ -1,0 +1,30 @@
+# Snapshot dummy for the `alpha` matrix entry — supplies the image, ingress host,
+# per-environment domains/S3 config and the CICD-provided app secrets so the alpha
+# manifests render standalone. No className here: values/traefik.yaml sets it
+# (layered after this in tests.yaml).
+app:
+  environment: ALPHA
+  image:
+    name: local.test/gaatha-server
+    tag: alpha.testtag
+  api:
+    ingress:
+      host: gaatha-api.alpha.test.local
+  env:
+    APP_DOMAIN: "https://gaatha-api.alpha.test.local"
+    FRONTEND_DOMAIN: "https://gaatha.alpha.test.local"
+    SESSION_COOKIE_DOMAIN: ".alpha.test.local"
+    CSRF_COOKIE_DOMAIN: ".alpha.test.local"
+    AWS_S3_ENDPOINT_URL: "https://s3.alpha.test.local"
+    AWS_S3_MEDIA_BUCKET_NAME: "dummy-media"
+    AWS_S3_STATIC_BUCKET_NAME: "dummy-static"
+  secrets:
+    DJANGO_SECRET_KEY: dummy-secret-key
+    DB_NAME: dummy
+    DB_USER: dummy
+    DB_PWD: dummy
+    DB_HOST: dummy-postgres
+    DB_PORT: "5432"
+    AWS_S3_ACCESS_KEY_ID: dummy-access-key
+    AWS_S3_SECRET_ACCESS_KEY: dummy-secret-key
+    AWS_S3_REGION_NAME: us-east-1
