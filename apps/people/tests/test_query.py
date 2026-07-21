@@ -34,8 +34,10 @@ class PeopleQueryTestCase(TestCase):
                     linkedinUrl=person.linkedin_url,
                     name=person.name,
                     qualification=person.qualification,
-                ) for person in people
-            ], resp['data']['people']
+                )
+                for person in people
+            ],
+            resp['data']['people'],
         )
         self.assertIsNotNone([person.profile_picture] for person in people)
         self.assertIsNotNone([person.art_work] for person in people)

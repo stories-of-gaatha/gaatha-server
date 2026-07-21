@@ -1,14 +1,15 @@
-import strawberry
-from strawberry import auto
-from strawberry.types import Info
-import strawberry_django
 from typing import Optional
 
-from gaatha.utils import get_enum_label
-from gaatha.types import FileFieldType
+import strawberry
+import strawberry_django
+from strawberry import auto
+from strawberry.types import Info
 
-from .filters import WorkFilter
+from gaatha.types import FileFieldType
+from gaatha.utils import get_enum_label
+
 from .enums import WorkTypeEnum
+from .filters import WorkFilter
 from .models import (
     Work,
     WorkCategory,

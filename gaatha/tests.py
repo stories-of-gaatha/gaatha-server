@@ -1,9 +1,13 @@
 from typing import Dict
+
 from django.test import TestCase as BaseTestCase
 
 
 class TestCase(BaseTestCase):
-    TEST_LANGUAGES = ('en', 'fr',)
+    TEST_LANGUAGES = (
+        'en',
+        'fr',
+    )
 
     def force_login(self, user):
         self.client.force_login(user)
@@ -57,5 +61,6 @@ class FakeTest(TestCase):
     This test is for running migrations only
     docker-compose run --rm server ./manage.py test -v 2 --pattern="gaatha/tests.py"
     """
+
     def test_fake(self):
         pass

@@ -1,6 +1,8 @@
 import argparse
+
 from django.core.management.base import BaseCommand
 from strawberry.printer import print_schema
+
 from gaatha.schema import schema
 
 

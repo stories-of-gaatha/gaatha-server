@@ -1,11 +1,9 @@
 import factory
+from django.core.files.uploadedfile import SimpleUploadedFile
 from factory import fuzzy
 from factory.django import DjangoModelFactory
-from django.core.files.uploadedfile import SimpleUploadedFile
 
-from .models import (
-    People
-)
+from .models import People
 
 
 class PeopleFactory(DjangoModelFactory):

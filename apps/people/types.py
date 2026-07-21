@@ -1,10 +1,11 @@
 import strawberry
+import strawberry_django
 from strawberry import auto
 from strawberry.types import Info
-import strawberry_django
+
+from gaatha.types import FileFieldType
 
 from .models import People
-from gaatha.types import FileFieldType
 
 
 @strawberry_django.ordering.order(People)

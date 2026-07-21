@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+
 from pathlib import Path
 
 import environ
@@ -67,7 +68,7 @@ ALLOWED_HOSTS = [
     'server',
     *env('ADDITIONAL_ALLOWED_HOSTS'),
     APP_DOMAIN.hostname,
-    ]
+]
 
 
 # Application definition
@@ -79,11 +80,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # local apps
     'apps.work',
     'apps.people',
-
     # thirdparty apps
     'banjo_utils',
     'strawberry.django',

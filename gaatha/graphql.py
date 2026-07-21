@@ -1,8 +1,9 @@
-from strawberry.django.views import AsyncGraphQLView
+from typing import Any, Optional
+
 from starlette.requests import Request
 from starlette.responses import Response
-from typing import Any, Optional
 from strawberry.dataloader import DataLoader
+from strawberry.django.views import AsyncGraphQLView
 
 from apps.work.dataloaders import (
     load_work_image,
