@@ -27,7 +27,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         # required for opencv-python for image width, height.
         libgl1 \
         libglib2.0-0 \
-        wait-for-it  \
     && uv lock --locked --offline \
         && uv sync --frozen --no-install-project --all-groups \
     # Clean-up
