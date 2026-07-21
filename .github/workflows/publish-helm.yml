@@ -10,7 +10,8 @@ on:
       - "v*.*.*"
 
 permissions:
-  contents: read
+  # contents: write lets the tag-triggered release job create the GitHub Release.
+  contents: write
   packages: write
   pull-requests: read
 
@@ -18,7 +19,7 @@ jobs:
   _:
     uses: toggle-corp/banjo-action/.github/workflows/pipeline.yml@v0.3.0
     permissions:
-      contents: read
+      contents: write
       packages: write
       pull-requests: read
     with:
@@ -37,3 +38,5 @@ jobs:
       # -- Publish
       docker__push: true
       helm__push: true
+      # Create a GitHub Release when the trigger is a version tag (v*.*.*).
+      github_release__create: ${{ github.ref_type == 'tag' }}

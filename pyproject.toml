@@ -1,6 +1,6 @@
 [project]
 name = "gaatha"
-version = "0.1.0"
+version = "0.1.0"  # managed by release.sh
 description = ""
 authors = [
     {name = "TC-DEV", email = "dev@togglecorp.com"},
