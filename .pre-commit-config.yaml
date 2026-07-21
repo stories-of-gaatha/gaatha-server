@@ -1,0 +1,36 @@
+default_language_version:
+  python: python3
+
+# NOTE: Keep the ruff config in pyproject.toml in sync with this.
+exclude: |
+    (?x)^(
+      \.git|
+      __pycache__|
+      \.venv|
+      schema.graphql|
+      helm/snapshots/
+    )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+        args: [--unsafe]
+      - id: debug-statements
+      - id: check-case-conflict
+      - id: detect-private-key
+
+  # Run the Ruff linter and formatter.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.8
+    hooks:
+      - id: ruff
+        types_or: [python, pyi]
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        types_or: [python, pyi]

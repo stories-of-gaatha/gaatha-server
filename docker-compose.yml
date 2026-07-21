@@ -19,7 +19,7 @@ services:
       DEBUG: ${DEBUG:-True}
       APP_ENVIRONMENT: ${APP_ENVIRONMENT:-DEV}
       # Domain configs
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?err}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-ci-insecure-django-secret-key}
       APP_DOMAIN: ${APP_DOMAIN:-http://localhost:8020}
       FRONTEND_DOMAIN: ${FRONTEND_DOMAIN:-http://localhost:3000}  # NOTE: Not used right now
       SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-localhost}

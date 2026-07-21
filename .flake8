@@ -1,5 +1,0 @@
-[flake8]
-extend-ignore = C901, E203, E701, W292
-max-line-length = 130
-exclude = .git,__pycache__,old,build,dist,*migrations*,*snapshots*,.venv
-max-complexity = 10
