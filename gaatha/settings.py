@@ -13,6 +13,8 @@ from pathlib import Path
 
 import environ
 
+from gaatha.logging import skip_health_probe_logs
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -83,11 +85,15 @@ INSTALLED_APPS = [
     'apps.people',
 
     # thirdparty apps
+    'banjo_utils',
     'strawberry.django',
     'tinymce',
 ]
 
 MIDDLEWARE = [
+    # banjo_utils HealthProbeMiddleware serves pod-local /healthz/live/ and
+    # /healthz/ready/ (bypassing ALLOWED_HOSTS); keep it first.
+    'banjo_utils.health.HealthProbeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -287,4 +293,39 @@ TINYMCE_DEFAULT_CONFIG = {
         "a11ycheck ltr rtl | showcomments addcomment code"
     ),
     "custom_undo_redo_levels": 10,
+}
+
+# banjo_utils HealthProbeMiddleware — pod-local k8s probe endpoints
+BANJO_HEALTH_PROBE_LIVE_URL = "/healthz/live/"
+BANJO_HEALTH_PROBE_READY_URL = "/healthz/ready/"
+
+# Drop successful (2xx) request-line logs for the health-probe paths so the
+# k8s probes (firing every few seconds) don't flood the logs. 4xx/5xx stay visible.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "skip_health_probes": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_health_probe_logs,
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["skip_health_probes"],
+        },
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "gunicorn.access": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
