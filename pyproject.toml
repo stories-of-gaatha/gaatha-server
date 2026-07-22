@@ -1,6 +1,6 @@
 [project]
 name = "gaatha"
-version = "0.1.0"
+version = "0.1.0"  # managed by release.sh
 description = ""
 authors = [
     {name = "TC-DEV", email = "dev@togglecorp.com"},
@@ -22,8 +22,36 @@ dependencies = [
    "gunicorn>=23.0.0",
    "requests>=2.32.4",
    "django-storages[s3]>=1.14.6",
+   # 3.24.0 is the newest release compatible with Django 4.2; 4.x requires Django>=5.2.
+   "django-health-check==3.24.0",
+   "psutil>=7.2.0",
+   "banjo-utils",
 ]
+
+[tool.uv.sources]
+banjo-utils = { git = "https://github.com/toggle-corp/banjo-utils", tag = "v0.2.0" }
+
 [dependency-groups]
 dev = []
 [tool.uv]
 package = false
+
+[tool.ruff]
+line-length = 130
+extend-exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "**/migrations/*",
+    "__pycache__",
+    "uv.lock",
+]
+# Preserve the existing quote style to keep the migration diff minimal.
+format.quote-style = "preserve"
+
+[tool.ruff.lint]
+ignore = ["C901", "E203", "E701"]
+extend-select = ["I", "B", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]

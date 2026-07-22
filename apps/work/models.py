@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class WorkCategory(models.Model):
@@ -22,26 +22,13 @@ class Work(models.Model):
     title = models.CharField(max_length=255)
     sub_title = models.CharField(max_length=225, blank=True)
     work_type = models.CharField(max_length=225, choices=WorkType.choices, default=WorkType.ARCHITECTURE)
-    description = models.TextField(
-        blank=True,
-        verbose_name=_('Description')
-    )
+    description = models.TextField(blank=True, verbose_name=_('Description'))
     art_work = models.FileField(null=True, blank=True, upload_to="work/art-works")
     is_cover_image_dark = models.BooleanField(default=False, verbose_name=_('Is Cover Image Dark ?'))
-    cover_image = models.ImageField(
-        null=True,
-        blank=True,
-        upload_to="work/cover-images",
-        verbose_name=_('Cover image')
-    )
+    cover_image = models.ImageField(null=True, blank=True, upload_to="work/cover-images", verbose_name=_('Cover image'))
     area = models.CharField(max_length=50, blank=True)
     category = models.ForeignKey(
-        WorkCategory,
-        verbose_name=_('Category'),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='work_category'
+        WorkCategory, verbose_name=_('Category'), on_delete=models.SET_NULL, blank=True, null=True, related_name='work_category'
     )
     status = models.CharField(max_length=250, verbose_name=_('Status'))
     duration = models.CharField(max_length=100, blank=True)
@@ -57,21 +44,12 @@ class Work(models.Model):
 
     def clean(self):
         if self.work_type == Work.WorkType.GRAPHICS_AND_VISUALIZATION and self.category:
-            raise ValidationError(
-                {'category': "Cannot select category when work type is Graphics and Visualization"})
+            raise ValidationError({'category': "Cannot select category when work type is Graphics and Visualization"})
 
 
 class WorkImage(models.Model):
-    work = models.ForeignKey(
-        Work,
-        on_delete=models.CASCADE,
-        related_name='workimage_work',
-        verbose_name=_('Work')
-    )
-    image = models.ImageField(
-        upload_to="work-image/images/",
-        verbose_name=_('Image')
-    )
+    work = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='workimage_work', verbose_name=_('Work'))
+    image = models.ImageField(upload_to="work-image/images/", verbose_name=_('Image'))
 
     def __str__(self):
         return str(self.work.title)

@@ -20,16 +20,17 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && apt-get install -y --no-install-recommends \
         # Build required packages
         gdal-bin build-essential gcc libc-dev libgdal-dev libproj-dev \
+        # Required by uv to fetch the banjo-utils git dependency
+        git \
         # Helper packages
         procps \
         # required for opencv-python for image width, height.
         libgl1 \
         libglib2.0-0 \
-        wait-for-it  \
     && uv lock --locked --offline \
         && uv sync --frozen --no-install-project --all-groups \
     # Clean-up
-    && apt-get remove -y build-essential gcc libc-dev libgdal-dev libproj-dev \
+    && apt-get remove -y build-essential gcc libc-dev libgdal-dev libproj-dev git \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import Work, WorkImage, WorkCategory
 from .forms import WorkForm
+from .models import Work, WorkCategory, WorkImage
 
 
 class WorkImageInline(admin.TabularInline):
@@ -29,6 +29,4 @@ class WorkAdmin(admin.ModelAdmin):
 
 @admin.register(WorkCategory)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = [
-        'name'
-    ]
+    list_display = ['name']

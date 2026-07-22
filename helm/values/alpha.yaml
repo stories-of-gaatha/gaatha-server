@@ -1,0 +1,13 @@
+# Alpha environment overlay — neutral structural config only.
+#
+# Platform-provided credentials (Postgres + object storage) and per-environment
+# values (ingress host, APP_DOMAIN / FRONTEND_DOMAIN / cookie domains, S3 endpoint
+# and bucket names) are injected at deploy time by the platform / CICD — they are
+# NOT committed here. App-owned secrets (DJANGO_SECRET_KEY) likewise come from CICD.
+# See gaatha/settings.py for all available options.
+app:
+  environment: ALPHA
+
+  api:
+    ingress:
+      enabled: true

@@ -1,0 +1,344 @@
+---
+# Source: gaatha-backend-helm/charts/app/templates/config/secret.yaml
+kind: Secret
+apiVersion: v1
+metadata:
+  name: gaatha-secret
+  labels:
+    app: gaatha
+    environment: ALPHA
+    release: release-name
+type: Opaque
+stringData:
+  # secrets
+  AWS_S3_ACCESS_KEY_ID: "dummy-access-key"
+  AWS_S3_REGION_NAME: "us-east-1"
+  AWS_S3_SECRET_ACCESS_KEY: "dummy-secret-key"
+  DB_HOST: "dummy-postgres"
+  DB_NAME: "dummy"
+  DB_PORT: "5432"
+  DB_PWD: "dummy"
+  DB_USER: "dummy"
+  DJANGO_SECRET_KEY: "dummy-secret-key"
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/config/configmap.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gaatha-env-name
+  labels:
+    app: gaatha
+    environment: ALPHA
+    release: release-name
+data:
+  # Configs
+  APP_DOMAIN: "https://gaatha-api.alpha.test.local"
+  APP_ENVIRONMENT: "ALPHA"
+  AWS_S3_ENABLED: "true"
+  AWS_S3_ENDPOINT_URL: "https://s3.alpha.test.local"
+  AWS_S3_MEDIA_BUCKET_NAME: "dummy-media"
+  AWS_S3_STATIC_BUCKET_NAME: "dummy-static"
+  CSRF_COOKIE_DOMAIN: ".alpha.test.local"
+  DEBUG: "false"
+  FRONTEND_DOMAIN: "https://gaatha.alpha.test.local"
+  LANGUAGE_CODE: "en-us"
+  SESSION_COOKIE_DOMAIN: ".alpha.test.local"
+  TIME_ZONE: "Asia/Kathmandu"
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/api/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gaatha-api
+  labels:
+    app: gaatha
+    component: api
+    environment: ALPHA
+    release: release-name
+spec:
+  type: ClusterIP
+  selector:
+    app: gaatha
+    component: api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/api/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gaatha-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+    reloader.stakater.com/auto: "true"
+  labels:
+    app: gaatha
+    component: api
+    environment: ALPHA
+    release: release-name
+spec:
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: gaatha
+      component: api
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 4d784796624fd31fbb842eccfbdb07f7d2f524099cdc81c91e17668a8474e95e
+        checksum/configmap: 99a7bbe386ff06e9ccdc913536ba93e227c8bd51c6dfe56b920ac01b52edf079
+      labels:
+        app: gaatha
+        component: api
+    spec:
+      terminationGracePeriodSeconds: 38
+      containers:
+        - name: api
+          image: "local.test/gaatha-server:alpha.testtag"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /code/scripts/run_prod.sh
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /healthz/live/
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /healthz/ready/
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /healthz/ready/
+              port: http
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: "0.1"
+              memory: 0.5Gi
+          envFrom:
+            - secretRef:
+                name: gaatha-secret
+            - configMapRef:
+                name: gaatha-env-name
+          env:
+            - name: DJANGO_APP_TYPE
+              value: "web"
+            
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 8
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/hooks/job.yaml
+# Hook: collect-static
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaatha-collect-static
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "20"
+  labels:
+    app: gaatha
+    component: hook
+    hookName: collect-static
+    environment: ALPHA
+    release: release-name
+spec:
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 4d784796624fd31fbb842eccfbdb07f7d2f524099cdc81c91e17668a8474e95e
+        checksum/configmap: 99a7bbe386ff06e9ccdc913536ba93e227c8bd51c6dfe56b920ac01b52edf079
+      labels:
+        app: gaatha
+        component: hook
+        hookName: collect-static
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: collect-static
+          image: "local.test/gaatha-server:alpha.testtag"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - ./manage.py
+            - collectstatic
+            - --noinput
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          envFrom:
+            - secretRef:
+                name: gaatha-secret
+            - configMapRef:
+                name: gaatha-env-name
+          env:
+            - name: DJANGO_APP_TYPE
+              value: "hook"
+---
+# Source: gaatha-backend-helm/charts/app/templates/hooks/job.yaml
+# Hook: db-migrate
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: gaatha-db-migrate-
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "20"
+  labels:
+    app: gaatha
+    component: hook
+    hookName: db-migrate
+    environment: ALPHA
+    release: release-name
+spec:
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 4d784796624fd31fbb842eccfbdb07f7d2f524099cdc81c91e17668a8474e95e
+        checksum/configmap: 99a7bbe386ff06e9ccdc913536ba93e227c8bd51c6dfe56b920ac01b52edf079
+      labels:
+        app: gaatha
+        component: hook
+        hookName: db-migrate
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: db-migrate
+          image: "local.test/gaatha-server:alpha.testtag"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - ./manage.py
+            - migrate
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          envFrom:
+            - secretRef:
+                name: gaatha-secret
+            - configMapRef:
+                name: gaatha-env-name
+          env:
+            - name: DJANGO_APP_TYPE
+              value: "hook"
+---
+# Source: gaatha-backend-helm/charts/app/templates/hooks/job.yaml
+# Hook: wait-for-resources
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gaatha-wait-for-resources
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "10"
+  labels:
+    app: gaatha
+    component: hook
+    hookName: wait-for-resources
+    environment: ALPHA
+    release: release-name
+spec:
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 4d784796624fd31fbb842eccfbdb07f7d2f524099cdc81c91e17668a8474e95e
+        checksum/configmap: 99a7bbe386ff06e9ccdc913536ba93e227c8bd51c6dfe56b920ac01b52edf079
+      labels:
+        app: gaatha
+        component: hook
+        hookName: wait-for-resources
+    spec:
+      restartPolicy: "Never"
+      containers:
+        - name: wait-for-resources
+          image: "local.test/gaatha-server:alpha.testtag"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - ./manage.py
+            - wait_for_resources
+            - --db
+            - --minio
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          envFrom:
+            - secretRef:
+                name: gaatha-secret
+            - configMapRef:
+                name: gaatha-env-name
+          env:
+            - name: DJANGO_APP_TYPE
+              value: "hook"
+            
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/api/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gaatha-api
+  labels:
+    app: gaatha
+    component: api
+    environment: ALPHA
+    release: release-name
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+    traefik.ingress.kubernetes.io/router.middlewares: default-gaatha-body-size@kubernetescrd
+spec:
+  ingressClassName: "traefik"
+  rules:
+    - host: "gaatha-api.alpha.test.local"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gaatha-api
+                port:
+                  number: 80
+
+---
+# Source: gaatha-backend-helm/charts/app/templates/extraManifests.yaml
+# Manifest: traefik-body-size-middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: gaatha-body-size
+spec:
+  buffering:
+    maxRequestBodyBytes: 52428800

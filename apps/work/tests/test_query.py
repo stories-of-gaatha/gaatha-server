@@ -38,8 +38,10 @@ class WorkQueryTestCase(TestCase):
                         id=str(work.category.id),
                         name=work.category.name,
                     ),
-                ) for work in works
-            ], resp['data']['works']
+                )
+                for work in works
+            ],
+            resp['data']['works'],
         )
         self.assertIsNotNone([work.cover_image] for work in works)
         self.assertIsNotNone([work.art_work] for work in works)
