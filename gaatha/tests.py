@@ -1,6 +1,27 @@
+import io
 from typing import Dict
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase as BaseTestCase
+from PIL import Image
+
+
+def generate_image_file(name: str = 'test.png', size: tuple[int, int] = (120, 80), fmt: str = 'PNG', orientation=None):
+    """Build an in-memory uploaded image of the given pixel size for tests.
+
+    Pass ``orientation`` (an EXIF orientation value) to tag the JPEG with a
+    rotation, e.g. 6 for a 90-degree turn.
+    """
+    buffer = io.BytesIO()
+    image = Image.new('RGB', size, 'red')
+    save_kwargs = {}
+    if orientation is not None:
+        exif = image.getexif()
+        exif[0x0112] = orientation
+        save_kwargs['exif'] = exif
+    image.save(buffer, fmt, **save_kwargs)
+    buffer.seek(0)
+    return SimpleUploadedFile(name, buffer.read(), content_type=f'image/{fmt.lower()}')
 
 
 class TestCase(BaseTestCase):

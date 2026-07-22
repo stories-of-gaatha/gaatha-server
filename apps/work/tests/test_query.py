@@ -1,5 +1,5 @@
 from apps.work.factories import WorkFactory, WorkImageFactory
-from gaatha.tests import TestCase
+from gaatha.tests import TestCase, generate_image_file
 
 
 class WorkQueryTestCase(TestCase):
@@ -79,3 +79,24 @@ class WorkQueryTestCase(TestCase):
         self.assertIsNotNone([image['id']] for image in resp_2['data']['work']['images'])
         self.assertIsNotNone([image['image']] for image in resp_2['data']['work']['images'])
         self.assertEqual(resp_2['data']['work']['id'], str(work.id))
+
+    def test_file_dimensions_served_from_db(self):
+        file_dimensions_query = """
+            query MyQuery($pk: ID!) {
+              work(pk: $pk) {
+                coverImage { width height }
+                artWork { width height }
+                images { image { width height } }
+              }
+            }
+        """
+        work = WorkFactory.create(
+            cover_image=generate_image_file('cover.png', size=(200, 100)),
+            art_work=generate_image_file('art.png', size=(40, 60)),
+        )
+        WorkImageFactory.create(work=work, image=generate_image_file('wi.png', size=(64, 48)))
+        resp = self.query_check(file_dimensions_query, variables={'pk': str(work.pk)})
+        data = resp['data']['work']
+        self.assertEqual(data['coverImage'], dict(width=200, height=100))
+        self.assertEqual(data['artWork'], dict(width=40, height=60))
+        self.assertEqual(data['images'][0]['image'], dict(width=64, height=48))

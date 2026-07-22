@@ -13,3 +13,9 @@ class PeopleAdmin(admin.ModelAdmin):
         'is_founder',
         'order',
     ]
+    readonly_fields = [
+        'profile_picture_width',
+        'profile_picture_height',
+        'art_work_width',
+        'art_work_height',
+    ]

@@ -1,6 +1,9 @@
 # go file storage folder
 media/**
 
+# local static/media root (DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT default)
+assets/
+
 # python virtual environment folder
 env
 

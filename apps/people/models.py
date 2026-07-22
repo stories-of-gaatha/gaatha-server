@@ -1,11 +1,22 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from gaatha.models import FileDimensionMixin
 
-class People(models.Model):
+
+class People(FileDimensionMixin, models.Model):
+    FILE_DIMENSION_FIELDS = {
+        "profile_picture": ("profile_picture_width", "profile_picture_height"),
+        "art_work": ("art_work_width", "art_work_height"),
+    }
+
     name = models.CharField(max_length=250, verbose_name=_('Name'))
     profile_picture = models.ImageField(blank=True, upload_to="people/profile-pictures", verbose_name=_("Profile Picture"))
+    profile_picture_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    profile_picture_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     art_work = models.FileField(blank=True, upload_to="people/art-works", verbose_name=_("Art Work"))
+    art_work_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    art_work_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     order = models.PositiveIntegerField(blank=True, null=True)
     email = models.EmailField(max_length=250, blank=True, verbose_name=_('Email'))
     designation = models.CharField(max_length=100, blank=True, verbose_name=_("Designation"))

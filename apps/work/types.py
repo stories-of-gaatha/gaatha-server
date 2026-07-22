@@ -34,7 +34,7 @@ class WorkImageType:
 
     @strawberry.field
     async def image(self, info: Info) -> FileFieldType | None:
-        return FileFieldType.resolve(self.image, info)
+        return FileFieldType.resolve(self.image, info, self.image_width, self.image_height)
 
 
 @strawberry.django.type(Work)
@@ -54,11 +54,11 @@ class WorkType:
 
     @strawberry.field
     async def art_work(self, info: Info) -> FileFieldType | None:
-        return FileFieldType.resolve(self.art_work, info)
+        return FileFieldType.resolve(self.art_work, info, self.art_work_width, self.art_work_height)
 
     @strawberry.field
     async def cover_image(self, info: Info) -> FileFieldType | None:
-        return FileFieldType.resolve(self.cover_image, info)
+        return FileFieldType.resolve(self.cover_image, info, self.cover_image_width, self.cover_image_height)
 
     @strawberry.field
     async def images(self, info: Info) -> list[WorkImageType]:
