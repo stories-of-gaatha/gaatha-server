@@ -18,7 +18,6 @@ dependencies = [
    "pytest-django<5.0.0,>=4.5.2",
    "factory-boy<4.0.0,>=3.2.1",
    "redis>=6.3.0",
-   "opencv-python-headless>=4.12.0.88",
    "gunicorn>=23.0.0",
    "requests>=2.32.4",
    "django-storages[s3]>=1.14.6",

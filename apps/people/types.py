@@ -28,11 +28,11 @@ class PeopleType:
 
     @strawberry.field
     async def profile_picture(self, info: Info) -> FileFieldType | None:
-        return FileFieldType.resolve(self.profile_picture, info)
+        return FileFieldType.resolve(self.profile_picture, info, self.profile_picture_width, self.profile_picture_height)
 
     @strawberry.field
     async def art_work(self, info: Info) -> FileFieldType | None:
-        return FileFieldType.resolve(self.art_work, info)
+        return FileFieldType.resolve(self.art_work, info, self.art_work_width, self.art_work_height)
 
 
 @strawberry.django.type(People, pagination=True)

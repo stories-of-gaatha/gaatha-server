@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-import cv2
 import strawberry
 from django.db import models
 from strawberry.types import Info
@@ -16,19 +15,20 @@ class FileFieldType:
     height: Optional[int]
 
     @staticmethod
-    def resolve(file: models.FileField, info: Info) -> FileFieldType | None:
+    def resolve(
+        file: models.FileField,
+        info: Info,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+    ) -> FileFieldType | None:
+        # width/height are persisted on the model at upload time (see
+        # gaatha.models.FileDimensionMixin and ImageField width/height fields)
+        # so we never open the file here — avoids a per-request read on S3.
         if not file:
             return
-        width = None
-        height = None
-        image = cv2.imread(file.path)
-        if image is not None and image.any():
-            height, width, _ = image.shape
-        # TODO file width, height calculation is a heavy operation so it should be saved in the database in future.
         return FileFieldType(
             name=file.name,
             url=info.context['request'].build_absolute_uri(file.url),
-            # TODO file width ,height calculation is a heavy operation so it should be saved in database in furute.
             width=width,
             height=height,
         )
