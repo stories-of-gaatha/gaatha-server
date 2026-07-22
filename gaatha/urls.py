@@ -26,6 +26,9 @@ from .schema import schema
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Outward-facing health endpoint for the external monitor (django-health-check).
+    # Distinct from the pod-internal /healthz/{live,ready}/ probes served by banjo_utils.
+    path('health-check/', include('health_check.urls')),
     path(
         "graphql/",
         csrf_exempt(CustomAsyncGraphQLView.as_view(schema=schema, graphiql=False)),

@@ -22,6 +22,9 @@ dependencies = [
    "gunicorn>=23.0.0",
    "requests>=2.32.4",
    "django-storages[s3]>=1.14.6",
+   # 3.24.0 is the newest release compatible with Django 4.2; 4.x requires Django>=5.2.
+   "django-health-check==3.24.0",
+   "psutil>=7.2.0",
    "banjo-utils",
 ]
 

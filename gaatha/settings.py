@@ -51,6 +51,11 @@ env = environ.Env(
     AWS_S3_REGION_NAME=str,
     AWS_S3_MEDIA_BUCKET_NAME=str,
     AWS_S3_STATIC_BUCKET_NAME=str,
+    # django-health-check (/health-check/)
+    # DISK_USAGE_MAX is a str so an empty/null value can map to None (skip); see below.
+    HEALTH_CHECK_DISK_USAGE_MAX=(str, "80"),  # percent; empty/"none"/"null" -> skip disk check
+    HEALTH_CHECK_MEMORY_MIN=(int, 100),  # MB
+    HEALTH_CHECK_SKIP_STORAGE=(bool, False),
 )
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -85,9 +90,28 @@ INSTALLED_APPS = [
     'apps.people',
     # thirdparty apps
     'banjo_utils',
+    # django-health-check: outward-facing /health-check/ endpoint for the external
+    # monitor (distinct from banjo_utils' pod-internal /healthz probes). Only the
+    # checkers whose dependency this project ships are enabled: DB, cache (Django's
+    # default cache framework), unapplied migrations, and disk/memory (psutil).
+    # health_check.storage is appended below unless HEALTH_CHECK_SKIP_STORAGE is set.
+    # Skipped: health_check.contrib.redis (no Redis cache/broker wired — no CACHES,
+    # no REDIS_URL) and health_check.contrib.rabbitmq (no RabbitMQ/AMQP broker).
+    'health_check',
+    'health_check.db',
+    'health_check.cache',
+    'health_check.contrib.migrations',
+    'health_check.contrib.psutil',
     'strawberry.django',
     'tinymce',
 ]
+
+# health_check.storage writes a small probe file to the default file storage on every
+# /health-check/ poll. Enabled by default; set HEALTH_CHECK_SKIP_STORAGE=true to omit it
+# — e.g. environments backed by object storage the monitor should not write to (used
+# with minio, skipped with S3).
+if not env('HEALTH_CHECK_SKIP_STORAGE'):
+    INSTALLED_APPS.append('health_check.storage')
 
 MIDDLEWARE = [
     # banjo_utils HealthProbeMiddleware serves pod-local /healthz/live/ and
@@ -297,6 +321,24 @@ TINYMCE_DEFAULT_CONFIG = {
 # banjo_utils HealthProbeMiddleware — pod-local k8s probe endpoints
 BANJO_HEALTH_PROBE_LIVE_URL = "/healthz/live/"
 BANJO_HEALTH_PROBE_READY_URL = "/healthz/ready/"
+
+# django-health-check exposes /health-check/. Unlike the /healthz probes above,
+# it is a normal Django view: subject to ALLOWED_HOSTS (the external monitor must
+# request a host in ALLOWED_HOSTS / ADDITIONAL_ALLOWED_HOSTS), publicly reachable
+# (no auth middleware gates it), and its request logs are NOT suppressed (the
+# probe-log filter matches only the /healthz paths).
+HEALTHCHECK_CACHE_KEY = "app_healthcheck_key"
+# psutil thresholds. The disk check is skippable: an empty / "none" / "null"
+# HEALTH_CHECK_DISK_USAGE_MAX resolves to None, which makes health_check.contrib.psutil
+# skip registering the disk check entirely (the Disk line disappears from /health-check/
+# while Memory still reports) — the psutil app's ready() drops DiskUsage when
+# HEALTH_CHECK["DISK_USAGE_MAX"] is None. Unset falls back to the 80% default (disk check
+# on). HEALTH_CHECK_MEMORY_MIN is the min available memory in MB (default 100).
+_disk_usage_max = env('HEALTH_CHECK_DISK_USAGE_MAX').strip()
+HEALTH_CHECK = {
+    "DISK_USAGE_MAX": int(_disk_usage_max) if _disk_usage_max and _disk_usage_max.lower() not in ('none', 'null') else None,
+    "MEMORY_MIN": env('HEALTH_CHECK_MEMORY_MIN'),  # MB (env HEALTH_CHECK_MEMORY_MIN)
+}
 
 # Drop successful (2xx) request-line logs for the health-probe paths so the
 # k8s probes (firing every few seconds) don't flood the logs. 4xx/5xx stay visible.
