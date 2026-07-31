@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from gaatha.models import FileDimensionMixin
+from gaatha.utils import FileSizeValidator
 
 
 class WorkCategory(models.Model):
@@ -30,11 +31,22 @@ class Work(FileDimensionMixin, models.Model):
     sub_title = models.CharField(max_length=225, blank=True)
     work_type = models.CharField(max_length=225, choices=WorkType.choices, default=WorkType.ARCHITECTURE)
     description = models.TextField(blank=True, verbose_name=_('Description'))
-    art_work = models.FileField(null=True, blank=True, upload_to="work/art-works")
+    art_work = models.FileField(
+        null=True,
+        blank=True,
+        upload_to="work/art-works",
+        validators=[FileSizeValidator()],
+    )
     art_work_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     art_work_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     is_cover_image_dark = models.BooleanField(default=False, verbose_name=_('Is Cover Image Dark ?'))
-    cover_image = models.ImageField(null=True, blank=True, upload_to="work/cover-images", verbose_name=_('Cover image'))
+    cover_image = models.ImageField(
+        null=True,
+        blank=True,
+        upload_to="work/cover-images",
+        verbose_name=_('Cover image'),
+        validators=[FileSizeValidator()],
+    )
     cover_image_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     cover_image_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     area = models.CharField(max_length=50, blank=True)
@@ -62,7 +74,11 @@ class WorkImage(FileDimensionMixin, models.Model):
     FILE_DIMENSION_FIELDS = {"image": ("image_width", "image_height")}
 
     work = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='workimage_work', verbose_name=_('Work'))
-    image = models.ImageField(upload_to="work-image/images/", verbose_name=_('Image'))
+    image = models.ImageField(
+        upload_to="work-image/images/",
+        verbose_name=_('Image'),
+        validators=[FileSizeValidator()],
+    )
     image_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     image_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
 
