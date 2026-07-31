@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from gaatha.models import FileDimensionMixin
+from gaatha.utils import FileSizeValidator
 
 
 class People(FileDimensionMixin, models.Model):
@@ -11,10 +12,20 @@ class People(FileDimensionMixin, models.Model):
     }
 
     name = models.CharField(max_length=250, verbose_name=_('Name'))
-    profile_picture = models.ImageField(blank=True, upload_to="people/profile-pictures", verbose_name=_("Profile Picture"))
+    profile_picture = models.ImageField(
+        blank=True,
+        upload_to="people/profile-pictures",
+        verbose_name=_("Profile Picture"),
+        validators=[FileSizeValidator()],
+    )
     profile_picture_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     profile_picture_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
-    art_work = models.FileField(blank=True, upload_to="people/art-works", verbose_name=_("Art Work"))
+    art_work = models.FileField(
+        blank=True,
+        upload_to="people/art-works",
+        verbose_name=_("Art Work"),
+        validators=[FileSizeValidator()],
+    )
     art_work_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     art_work_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     order = models.PositiveIntegerField(blank=True, null=True)
